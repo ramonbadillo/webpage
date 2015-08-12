@@ -1,6 +1,6 @@
 ﻿{
-	"name": " Gravitaria",
-	"short_name": " Gravitaria",
+	"name": "Gravitaria",
+	"short_name": "Gravitaria",
 	"start_url": "index.html",
 	"display": "fullscreen",
 	"orientation": "landscape",
