@@ -1,5 +1,5 @@
 ﻿CACHE MANIFEST
-#1439414143
+#1439674341
 data.js
 c2runtime.js
 jquery-2.1.1.min.js
@@ -38,6 +38,7 @@ images/star1-sheet0.png
 images/star1-sheet1.png
 images/star2-sheet0.png
 images/nextui-sheet0.png
+images/pauselayer-sheet0.png
 images/emiconui-sheet0.png
 images/levelbox-sheet0.png
 images/levelbox-sheet1.png
@@ -76,6 +77,8 @@ images/em_pastocornerright-sheet0.png
 images/pasto-sheet0.png
 images/pasto-sheet1.png
 images/em_vineoverlaytop.png
+images/em_simplepike.png
+images/em_biggerpikes.png
 images/em_floor.png
 images/em_wall.png
 images/exitseal.png
@@ -89,7 +92,14 @@ images/em_torret-sheet0.png
 images/em_turretprojectile-sheet0.png
 images/em_parallax.png
 images/em_cloud-sheet0.png
+images/em_cloudb-sheet0.png
+images/em_cloudc-sheet0.png
+images/em_cloudd-sheet0.png
+images/em_cloude-sheet0.png
+images/em_cloudf-sheet0.png
+images/mountain_distant_background.png
 images/mr_background1.png
+images/mr_loopeable.png
 images/mr_stone1-sheet0.png
 images/sprite2-sheet0.png
 images/sprite3-sheet0.png
@@ -105,6 +115,7 @@ images/mr_leth.png
 images/mr_pico-sheet0.png
 images/sprite7-sheet0.png
 images/mr_estatua-sheet0.png
+images/mr_lavaoverlay.png
 images/mr_parallax.png
 images/catapultparticle.png
 images/tokenparticle.png

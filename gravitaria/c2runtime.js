@@ -25661,6 +25661,170 @@ cr.behaviors.Physics = function(runtime)
 }());
 ;
 ;
+cr.behaviors.Pin = function(runtime)
+{
+	this.runtime = runtime;
+};
+(function ()
+{
+	var behaviorProto = cr.behaviors.Pin.prototype;
+	behaviorProto.Type = function(behavior, objtype)
+	{
+		this.behavior = behavior;
+		this.objtype = objtype;
+		this.runtime = behavior.runtime;
+	};
+	var behtypeProto = behaviorProto.Type.prototype;
+	behtypeProto.onCreate = function()
+	{
+	};
+	behaviorProto.Instance = function(type, inst)
+	{
+		this.type = type;
+		this.behavior = type.behavior;
+		this.inst = inst;				// associated object instance to modify
+		this.runtime = type.runtime;
+	};
+	var behinstProto = behaviorProto.Instance.prototype;
+	behinstProto.onCreate = function()
+	{
+		this.pinObject = null;
+		this.pinObjectUid = -1;		// for loading
+		this.pinAngle = 0;
+		this.pinDist = 0;
+		this.myStartAngle = 0;
+		this.theirStartAngle = 0;
+		this.lastKnownAngle = 0;
+		this.mode = 0;				// 0 = position & angle; 1 = position; 2 = angle; 3 = rope; 4 = bar
+		var self = this;
+		if (!this.recycled)
+		{
+			this.myDestroyCallback = (function(inst) {
+													self.onInstanceDestroyed(inst);
+												});
+		}
+		this.runtime.addDestroyCallback(this.myDestroyCallback);
+	};
+	behinstProto.saveToJSON = function ()
+	{
+		return {
+			"uid": this.pinObject ? this.pinObject.uid : -1,
+			"pa": this.pinAngle,
+			"pd": this.pinDist,
+			"msa": this.myStartAngle,
+			"tsa": this.theirStartAngle,
+			"lka": this.lastKnownAngle,
+			"m": this.mode
+		};
+	};
+	behinstProto.loadFromJSON = function (o)
+	{
+		this.pinObjectUid = o["uid"];		// wait until afterLoad to look up
+		this.pinAngle = o["pa"];
+		this.pinDist = o["pd"];
+		this.myStartAngle = o["msa"];
+		this.theirStartAngle = o["tsa"];
+		this.lastKnownAngle = o["lka"];
+		this.mode = o["m"];
+	};
+	behinstProto.afterLoad = function ()
+	{
+		if (this.pinObjectUid === -1)
+			this.pinObject = null;
+		else
+		{
+			this.pinObject = this.runtime.getObjectByUID(this.pinObjectUid);
+;
+		}
+		this.pinObjectUid = -1;
+	};
+	behinstProto.onInstanceDestroyed = function (inst)
+	{
+		if (this.pinObject == inst)
+			this.pinObject = null;
+	};
+	behinstProto.onDestroy = function()
+	{
+		this.pinObject = null;
+		this.runtime.removeDestroyCallback(this.myDestroyCallback);
+	};
+	behinstProto.tick = function ()
+	{
+	};
+	behinstProto.tick2 = function ()
+	{
+		if (!this.pinObject)
+			return;
+		if (this.lastKnownAngle !== this.inst.angle)
+			this.myStartAngle = cr.clamp_angle(this.myStartAngle + (this.inst.angle - this.lastKnownAngle));
+		var newx = this.inst.x;
+		var newy = this.inst.y;
+		if (this.mode === 3 || this.mode === 4)		// rope mode or bar mode
+		{
+			var dist = cr.distanceTo(this.inst.x, this.inst.y, this.pinObject.x, this.pinObject.y);
+			if ((dist > this.pinDist) || (this.mode === 4 && dist < this.pinDist))
+			{
+				var a = cr.angleTo(this.pinObject.x, this.pinObject.y, this.inst.x, this.inst.y);
+				newx = this.pinObject.x + Math.cos(a) * this.pinDist;
+				newy = this.pinObject.y + Math.sin(a) * this.pinDist;
+			}
+		}
+		else
+		{
+			newx = this.pinObject.x + Math.cos(this.pinObject.angle + this.pinAngle) * this.pinDist;
+			newy = this.pinObject.y + Math.sin(this.pinObject.angle + this.pinAngle) * this.pinDist;
+		}
+		var newangle = cr.clamp_angle(this.myStartAngle + (this.pinObject.angle - this.theirStartAngle));
+		this.lastKnownAngle = newangle;
+		if ((this.mode === 0 || this.mode === 1 || this.mode === 3 || this.mode === 4)
+			&& (this.inst.x !== newx || this.inst.y !== newy))
+		{
+			this.inst.x = newx;
+			this.inst.y = newy;
+			this.inst.set_bbox_changed();
+		}
+		if ((this.mode === 0 || this.mode === 2) && (this.inst.angle !== newangle))
+		{
+			this.inst.angle = newangle;
+			this.inst.set_bbox_changed();
+		}
+	};
+	function Cnds() {};
+	Cnds.prototype.IsPinned = function ()
+	{
+		return !!this.pinObject;
+	};
+	behaviorProto.cnds = new Cnds();
+	function Acts() {};
+	Acts.prototype.Pin = function (obj, mode_)
+	{
+		if (!obj)
+			return;
+		var otherinst = obj.getFirstPicked(this.inst);
+		if (!otherinst)
+			return;
+		this.pinObject = otherinst;
+		this.pinAngle = cr.angleTo(otherinst.x, otherinst.y, this.inst.x, this.inst.y) - otherinst.angle;
+		this.pinDist = cr.distanceTo(otherinst.x, otherinst.y, this.inst.x, this.inst.y);
+		this.myStartAngle = this.inst.angle;
+		this.lastKnownAngle = this.inst.angle;
+		this.theirStartAngle = otherinst.angle;
+		this.mode = mode_;
+	};
+	Acts.prototype.Unpin = function ()
+	{
+		this.pinObject = null;
+	};
+	behaviorProto.acts = new Acts();
+	function Exps() {};
+	Exps.prototype.PinnedUID = function (ret)
+	{
+		ret.set_int(this.pinObject ? this.pinObject.uid : -1);
+	};
+	behaviorProto.exps = new Exps();
+}());
+;
+;
 cr.behaviors.Rotate = function(runtime)
 {
 	this.runtime = runtime;
@@ -27171,10 +27335,10 @@ cr.getObjectRefTable = function () { return [
 	cr.plugins_.LocalStorage,
 	cr.plugins_.Particles,
 	cr.plugins_.Text,
-	cr.plugins_.TiledBg,
-	cr.plugins_.Sprite,
 	cr.plugins_.Spritefont2,
+	cr.plugins_.TiledBg,
 	cr.plugins_.Touch,
+	cr.plugins_.Sprite,
 	cr.behaviors.LOS,
 	cr.behaviors.Bullet,
 	cr.behaviors.Turret,
@@ -27186,6 +27350,7 @@ cr.getObjectRefTable = function () { return [
 	cr.behaviors.Timer,
 	cr.behaviors.Sin,
 	cr.behaviors.wrap,
+	cr.behaviors.Pin,
 	cr.behaviors.Flash,
 	cr.behaviors.custom,
 	cr.system_object.prototype.cnds.IsGroupActive,
@@ -27233,42 +27398,30 @@ cr.getObjectRefTable = function () { return [
 	cr.system_object.prototype.acts.GoToLayout,
 	cr.plugins_.Sprite.prototype.exps.Count,
 	cr.system_object.prototype.acts.SetGroupActive,
-	cr.behaviors.Turret.prototype.acts.AcquireTarget,
-	cr.behaviors.Bullet.prototype.acts.SetEnabled,
-	cr.behaviors.LOS.prototype.cnds.HasLOSToObject,
-	cr.behaviors.Turret.prototype.cnds.OnShoot,
-	cr.plugins_.Sprite.prototype.acts.Spawn,
-	cr.behaviors.Bullet.prototype.acts.Bounce,
-	cr.plugins_.Sprite.prototype.acts.RotateTowardPosition,
-	cr.behaviors.Bullet.prototype.cnds.CompareTravelled,
-	cr.plugins_.Sprite.prototype.acts.Destroy,
-	cr.plugins_.Sprite.prototype.cnds.IsBetweenAngles,
-	cr.plugins_.Sprite.prototype.acts.SetFlipped,
-	cr.system_object.prototype.cnds.Else,
-	cr.plugins_.Sprite.prototype.cnds.IsOverlapping,
-	cr.behaviors.custom.prototype.acts.PushOutSolid,
-	cr.system_object.prototype.cnds.Every,
-	cr.system_object.prototype.acts.CreateObject,
-	cr.system_object.prototype.exps.random,
-	cr.plugins_.Sprite.prototype.cnds.OnCollision,
-	cr.plugins_.Sprite.prototype.acts.SetScale,
 	cr.behaviors.Sin.prototype.acts.SetActive,
 	cr.behaviors.Sin.prototype.acts.SetMagnitude,
 	cr.behaviors.Sin.prototype.acts.SetPeriod,
+	cr.behaviors.Pin.prototype.acts.Pin,
 	cr.plugins_.TiledBg.prototype.acts.SetY,
 	cr.plugins_.TiledBg.prototype.exps.Y,
+	cr.plugins_.Sprite.prototype.cnds.OnCollision,
 	cr.plugins_.Sprite.prototype.acts.SetInstanceVar,
 	cr.plugins_.Sprite.prototype.cnds.CompareInstanceVar,
 	cr.plugins_.Sprite.prototype.acts.SetY,
+	cr.plugins_.Sprite.prototype.acts.Destroy,
 	cr.plugins_.Sprite.prototype.cnds.OnDestroyed,
+	cr.plugins_.Sprite.prototype.acts.Spawn,
+	cr.system_object.prototype.cnds.Every,
 	cr.plugins_.Particles.prototype.acts.SetAngle,
 	cr.plugins_.Particles.prototype.acts.SetSpraying,
 	cr.plugins_.Sprite.prototype.acts.SetAnim,
 	cr.behaviors.Physics.prototype.acts.SetWorldGravity,
+	cr.system_object.prototype.acts.CreateObject,
 	cr.plugins_.Touch.prototype.exps.Y,
 	cr.plugins_.Sprite.prototype.cnds.OnCreated,
 	cr.behaviors.Timer.prototype.acts.StartTimer,
 	cr.behaviors.Timer.prototype.cnds.OnTimer,
+	cr.plugins_.Sprite.prototype.cnds.IsOverlapping,
 	cr.plugins_.Sprite.prototype.acts.MoveAtAngle,
 	cr.system_object.prototype.exps.angle,
 	cr.plugins_.Sprite.prototype.acts.SetPosToObject,
@@ -27279,11 +27432,13 @@ cr.getObjectRefTable = function () { return [
 	cr.system_object.prototype.exps.distance,
 	cr.plugins_.Sprite.prototype.acts.SetWidth,
 	cr.behaviors.Physics.prototype.acts.ApplyImpulseAtAngle,
+	cr.behaviors.custom.prototype.acts.PushOutSolid,
+	cr.system_object.prototype.cnds.Else,
+	cr.behaviors.Bullet.prototype.acts.SetEnabled,
+	cr.plugins_.Sprite.prototype.acts.RotateTowardPosition,
 	cr.behaviors.Flash.prototype.acts.Flash,
 	cr.plugins_.Sprite.prototype.cnds.OnAnimFinished,
 	cr.behaviors.Physics.prototype.cnds.CompareAngularVelocity,
-	cr.system_object.prototype.cnds.TriggerOnce,
-	cr.plugins_.TiledBg.prototype.acts.Destroy,
 	cr.plugins_.Sprite.prototype.acts.MoveToLayer,
 	cr.plugins_.Sprite.prototype.acts.MoveToBottom,
 	cr.behaviors.Physics.prototype.acts.SetImmovable,
@@ -27291,13 +27446,19 @@ cr.getObjectRefTable = function () { return [
 	cr.behaviors.Physics.prototype.acts.ApplyForceAtAngle,
 	cr.plugins_.LocalStorage.prototype.acts.SetItem,
 	cr.plugins_.TiledBg.prototype.cnds.CompareInstanceVar,
+	cr.plugins_.TiledBg.prototype.acts.Destroy,
 	cr.plugins_.Spritefont2.prototype.acts.Destroy,
+	cr.system_object.prototype.cnds.TriggerOnce,
 	cr.system_object.prototype.acts.SetTimescale,
+	cr.plugins_.Sprite.prototype.acts.SetScale,
 	cr.plugins_.Sprite.prototype.acts.MoveToTop,
+	cr.plugins_.Sprite.prototype.acts.SetOpacity,
 	cr.system_object.prototype.acts.RestartLayout,
 	cr.behaviors.Rotate.prototype.acts.SetSpeed,
 	cr.behaviors.Rotate.prototype.acts.SetAcceleration,
 	cr.behaviors.Turret.prototype.acts.AddTarget,
+	cr.behaviors.Turret.prototype.cnds.OnShoot,
+	cr.behaviors.Bullet.prototype.cnds.CompareTravelled,
 	cr.behaviors.Fade.prototype.acts.StartFade,
 	cr.plugins_.Audio.prototype.acts.PlayByName,
 	cr.plugins_.Function.prototype.exps.Param
