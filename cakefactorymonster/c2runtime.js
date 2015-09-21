@@ -24391,9 +24391,9 @@ cr.getObjectRefTable = function () { return [
 	cr.plugins_.Function,
 	cr.plugins_.Particles,
 	cr.plugins_.Spritefont2,
-	cr.plugins_.Touch,
-	cr.plugins_.TiledBg,
 	cr.plugins_.Sprite,
+	cr.plugins_.TiledBg,
+	cr.plugins_.Touch,
 	cr.behaviors.Rotate,
 	cr.behaviors.Physics,
 	cr.behaviors.Pin,
@@ -24415,6 +24415,7 @@ cr.getObjectRefTable = function () { return [
 	cr.system_object.prototype.cnds.CompareVar,
 	cr.plugins_.Sprite.prototype.acts.SetInstanceVar,
 	cr.system_object.prototype.cnds.Else,
+	cr.plugins_.Audio.prototype.acts.Play,
 	cr.system_object.prototype.acts.GoToLayout,
 	cr.system_object.prototype.cnds.OnLayoutStart,
 	cr.plugins_.Spritefont2.prototype.acts.SetText,
@@ -24433,7 +24434,6 @@ cr.getObjectRefTable = function () { return [
 	cr.plugins_.Function.prototype.cnds.OnFunction,
 	cr.plugins_.Audio.prototype.acts.PlayByName,
 	cr.plugins_.Function.prototype.exps.Param,
-	cr.plugins_.Audio.prototype.acts.Play,
 	cr.system_object.prototype.cnds.OnLayoutEnd,
 	cr.plugins_.Audio.prototype.acts.Stop
 ];};

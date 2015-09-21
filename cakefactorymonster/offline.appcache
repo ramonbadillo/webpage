@@ -1,5 +1,5 @@
 ﻿CACHE MANIFEST
-#1442771199
+#1442837390
 data.js
 c2runtime.js
 jquery-2.1.1.min.js
@@ -49,6 +49,7 @@ images/score_sprite-sheet0.png
 images/pauseoverbg.png
 images/sprite4-sheet0.png
 images/fadetrans-sheet0.png
+images/credits-sheet0.png
 media/hall.m4a
 media/hall.ogg
 media/explosion.m4a
@@ -73,6 +74,10 @@ media/eat2.m4a
 media/eat2.ogg
 media/eat3.m4a
 media/eat3.ogg
+media/button_cute_02.m4a
+media/button_cute_02.ogg
+media/message_01.m4a
+media/message_01.ogg
 icon-16.png
 icon-32.png
 icon-114.png
